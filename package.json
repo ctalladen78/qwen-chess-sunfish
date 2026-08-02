@@ -1,0 +1,14 @@
+{
+  "name": "sunfish-jul29",
+  "version": "1.0.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite chess-ornith",
+    "build": "vite build chess-ornith",
+    "preview": "vite preview chess-ornith",
+    "start": "vite chess-ornith"
+  },
+  "devDependencies": {
+    "vite": "^5.4.0"
+  }
+}

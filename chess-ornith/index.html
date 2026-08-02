@@ -1,0 +1,248 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Qwen Chess - Powered by Sunfish Engine</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link
+    href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;600&family=Outfit:wght@300;400;500;600;700&display=swap"
+    rel="stylesheet">
+  <link rel="stylesheet" href="styles.css" />
+</head>
+
+<body>
+  <div id="game-container">
+    <header class="app-header">
+      <div class="brand">
+        <span class="logo-icon">♖</span>
+        <h1>Qwen Chess<span class="badge">Sunfish AI</span></h1>
+      </div>
+      <div class="header-actions">
+        <button class="btn btn-secondary btn-sm" id="btn-clear-cache" title="Clear Application & Engine Cache">🧹 Clear
+          Cache</button>
+        <button class="btn btn-secondary btn-sm" id="btn-flip">🔄 Flip Board</button>
+        <button class="btn btn-primary btn-sm" id="btn-restart">✨ New Game</button>
+      </div>
+    </header>
+
+    <div class="game-layout">
+      <!-- Evaluation Bar -->
+      <div class="eval-bar-container" id="eval-bar-wrapper">
+        <div class="eval-bar-text" id="eval-bar-text">0.0</div>
+        <div class="eval-bar" id="eval-bar">
+          <div class="eval-bar-fill" id="eval-bar-fill" style="height: 50%;"></div>
+        </div>
+      </div>
+
+      <!-- Main Board Section -->
+      <div class="board-section">
+        <div class="board-header">
+          <div class="turn-status">
+            <span class="turn-dot"></span>
+            <span class="turn-indicator">White's Turn</span>
+          </div>
+          <div class="status-alerts">
+            <span class="check-indicator" style="display:none;">⚠️ CHECK!</span>
+            <span class="mate-indicator" style="display:none;">🏆 CHECKMATE!</span>
+          </div>
+        </div>
+
+        <div class="board-wrapper">
+          <div class="board" id="board">
+            <div class="board-info">
+              <div class="captured-white" id="captured-white"></div>
+              <div class="captured-black" id="captured-black"></div>
+            </div>
+          </div>
+        </div>
+
+        <div class="quick-controls">
+          <button class="btn btn-action" id="btn-undo">↩️ Undo Move</button>
+          <button class="btn btn-action btn-accent" id="btn-hint">💡 Get Hint</button>
+          <button class="btn btn-action" id="btn-threat">🎯 Threat Radar</button>
+        </div>
+      </div>
+
+      <!-- Interactive Sidebar -->
+      <aside class="sidebar">
+        <nav class="sidebar-tabs">
+          <button class="tab-btn active" data-tab="options">⚙️ Settings</button>
+          <button class="tab-btn" data-tab="masters">👑 Masters</button>
+          <button class="tab-btn" data-tab="history">📜 History</button>
+          <button class="tab-btn" data-tab="ai">🤖 AI Insights</button>
+        </nav>
+
+        <!-- Tab 1: Game Settings & Options -->
+        <div class="tab-content active" id="tab-options">
+          <div class="setting-group">
+            <label class="setting-label">Game Mode</label>
+            <select id="mode-select" class="select-input">
+              <option value="pve-white">Human (White) vs AI (Black)</option>
+              <option value="pve-black">AI (White) vs Human (Black)</option>
+              <option value="pvp">Human vs Human (Pass & Play)</option>
+              <option value="eve">AI vs AI (Master Demonstration)</option>
+            </select>
+          </div>
+
+          <div class="setting-group">
+            <label class="setting-label">Active Master Opponent</label>
+            <select id="master-select-dropdown" class="select-input">
+              <option value="sunfish">🐟 Sunfish Engine (PST & Alpha-Beta)</option>
+              <option value="kasparov">👑 Garry Kasparov (Dynamic Attack)</option>
+              <option value="petrosian">🛡️ Tigran Petrosian (Iron Defense)</option>
+              <option value="carlsen">🧠 Magnus Carlsen (Precision Squeeze)</option>
+              <option value="tal">⚡ Mikhail Tal (Tactical Magician)</option>
+              <option value="morphy">📚 Paul Morphy (Classical Development)</option>
+            </select>
+          </div>
+
+          <div class="setting-group">
+            <label class="setting-label">AI Difficulty Level</label>
+            <select id="difficulty-select" class="select-input">
+              <option value="beginner">Beginner (1-Ply Search)</option>
+              <option value="intermediate">Intermediate (2-Ply Search)</option>
+              <option value="advanced" selected>Advanced (Sunfish Depth 4)</option>
+              <option value="master">Master (Sunfish Depth 5 + Quiescence)</option>
+            </select>
+          </div>
+
+          <div class="setting-group">
+            <label class="setting-label">AI Assist Options</label>
+            <div class="toggle-list">
+              <label class="toggle-item">
+                <input type="checkbox" id="toggle-hints" checked>
+                <span>Enable Best Move Hints</span>
+              </label>
+              <label class="toggle-item">
+                <input type="checkbox" id="toggle-eval" checked>
+                <span>Show Evaluation Bar</span>
+              </label>
+              <label class="toggle-item">
+                <input type="checkbox" id="toggle-threats">
+                <span>Highlight Danger / Threat Map</span>
+              </label>
+            </div>
+          </div>
+
+          <div class="setting-group">
+            <label class="setting-label">Board Visual Theme</label>
+            <select id="theme-select" class="select-input">
+              <option value="glass">Glassmorphism Dark</option>
+              <option value="classic">Classic Wood</option>
+              <option value="emerald">Emerald Green</option>
+              <option value="cyber">Cyber Neon</option>
+            </select>
+          </div>
+        </div>
+
+        <!-- Tab 4: Master Profiles Grid & Practice Library -->
+        <div class="tab-content" id="tab-masters">
+          <div class="master-header">
+            <h3>Chess Master Profiles</h3>
+            <p class="master-sub">Select a master profile to challenge or receive tailored practice guidelines & move
+              hints.</p>
+          </div>
+
+          <div class="active-guidelines-box" id="active-master-guidelines">
+            <div class="guideline-badge" id="master-badge">🐟 Sunfish Engine</div>
+            <p class="guideline-quote" id="master-quote">"Mathematical precision with 120-mailbox PST tables and
+              alpha-beta search."</p>
+            <div class="guideline-tip" id="master-tip">💡 <strong>Practice Principle:</strong> Control center squares
+              early and optimize piece-square mobility.</div>
+          </div>
+
+          <div class="master-grid" id="master-grid">
+            <div class="master-card active" data-master="sunfish">
+              <div class="master-avatar">🐟</div>
+              <div class="master-info">
+                <div class="master-name">Sunfish Engine</div>
+                <div class="master-tag">PST Tactics</div>
+              </div>
+            </div>
+
+            <div class="master-card" data-master="kasparov">
+              <div class="master-avatar">👑</div>
+              <div class="master-info">
+                <div class="master-name">Garry Kasparov</div>
+                <div class="master-tag">Dynamic Attack</div>
+              </div>
+            </div>
+
+            <div class="master-card" data-master="petrosian">
+              <div class="master-avatar">🛡️</div>
+              <div class="master-info">
+                <div class="master-name">Tigran Petrosian</div>
+                <div class="master-tag">Iron Defense</div>
+              </div>
+            </div>
+
+            <div class="master-card" data-master="carlsen">
+              <div class="master-avatar">🧠</div>
+              <div class="master-info">
+                <div class="master-name">Magnus Carlsen</div>
+                <div class="master-tag">Precision Squeeze</div>
+              </div>
+            </div>
+
+            <div class="master-card" data-master="tal">
+              <div class="master-avatar">⚡</div>
+              <div class="master-info">
+                <div class="master-name">Mikhail Tal</div>
+                <div class="master-tag">Tactical Magician</div>
+              </div>
+            </div>
+
+            <div class="master-card" data-master="morphy">
+              <div class="master-avatar">📚</div>
+              <div class="master-info">
+                <div class="master-name">Paul Morphy</div>
+                <div class="master-tag">Classical Dev</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Tab 2: Move History & FEN -->
+        <div class="tab-content" id="tab-history">
+          <div class="material-advantage" id="material-adv">
+            <span>Material Advantage:</span>
+            <strong id="adv-score">Even</strong>
+          </div>
+          <div class="move-history" id="move-history"></div>
+          <div class="export-actions">
+            <button class="btn btn-secondary btn-sm" id="btn-copy-fen">Copy FEN</button>
+            <button class="btn btn-secondary btn-sm" id="btn-copy-pgn">Copy PGN</button>
+          </div>
+        </div>
+
+        <!-- Tab 3: AI Assistant Insights -->
+        <div class="tab-content" id="tab-ai">
+          <div class="ai-insight-card">
+            <h3>Sunfish AI Analysis</h3>
+            <div class="eval-stat">
+              <span class="stat-label">Position Score:</span>
+              <span class="stat-value" id="ai-eval-score">0.00</span>
+            </div>
+            <div class="eval-stat">
+              <span class="stat-label">Recommended Move:</span>
+              <span class="stat-value" id="ai-rec-move">None</span>
+            </div>
+            <div class="eval-stat">
+              <span class="stat-label">Search Nodes:</span>
+              <span class="stat-value" id="ai-nodes">0</span>
+            </div>
+            <p class="ai-summary-text" id="ai-summary">Sunfish is ready. Make a move or request a hint for real-time
+              tactical analysis.</p>
+          </div>
+        </div>
+      </aside>
+    </div>
+  </div>
+
+  <script type="module" src="main.js"></script>
+</body>
+
+</html>
