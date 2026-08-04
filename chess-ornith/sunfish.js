@@ -16,8 +16,8 @@ const PST_BASE = {
       0,   0,   0,   0,   0,   0,   0,   0,
      78,  83,  86,  73, 102,  82,  85,  90,
       7,  29,  21,  44,  40,  31,  44,   7,
-    -17,  16,  -2,  15,  14,   0,  15, -13,
-    -26,   3,  10,   9,   6,   1,   0, -23,
+    -17,  16,  -2,  25,  30,   0,  14, -15,
+    -26,   3,  20,  35,  35,  20,   3, -26,
     -22,   9,   5, -11, -10,  -2,   3, -19,
     -31,   8,  -7, -37, -36, -14,   3, -31,
       0,   0,   0,   0,   0,   0,   0,   0
@@ -132,6 +132,45 @@ export class SunfishEngine {
     return 21 + r * 10 + c;
   }
 
+  evaluatePawnStructure(boardStr) {
+    let penalty = 0;
+    const whitePawnsByFile = new Array(8).fill(0);
+    const blackPawnsByFile = new Array(8).fill(0);
+
+    for (let i = 21; i <= 98; i++) {
+      const p = boardStr[i];
+      if (p === 'P') {
+        const file = (i % 10) - 1;
+        if (file >= 0 && file < 8) whitePawnsByFile[file]++;
+      } else if (p === 'p') {
+        const file = (i % 10) - 1;
+        if (file >= 0 && file < 8) blackPawnsByFile[file]++;
+      }
+    }
+
+    // Doubled pawns penalty (-30 per extra pawn)
+    for (let f = 0; f < 8; f++) {
+      if (whitePawnsByFile[f] > 1) penalty -= 30 * (whitePawnsByFile[f] - 1);
+      if (blackPawnsByFile[f] > 1) penalty += 30 * (blackPawnsByFile[f] - 1);
+    }
+
+    // Isolated pawns penalty (-20 per isolated pawn)
+    for (let f = 0; f < 8; f++) {
+      if (whitePawnsByFile[f] > 0) {
+        const left = f > 0 ? whitePawnsByFile[f - 1] : 0;
+        const right = f < 7 ? whitePawnsByFile[f + 1] : 0;
+        if (left === 0 && right === 0) penalty -= 20 * whitePawnsByFile[f];
+      }
+      if (blackPawnsByFile[f] > 0) {
+        const left = f > 0 ? blackPawnsByFile[f - 1] : 0;
+        const right = f < 7 ? blackPawnsByFile[f + 1] : 0;
+        if (left === 0 && right === 0) penalty += 20 * blackPawnsByFile[f];
+      }
+    }
+
+    return penalty;
+  }
+
   // Calculate static evaluation score for White relative to Black
   evaluate(boardStr) {
     let score = 0;
@@ -151,6 +190,10 @@ export class SunfishEngine {
         score -= rotVal;
       }
     }
+
+    // Add structural pawn evaluation (penalizing doubled and isolated pawns)
+    score += this.evaluatePawnStructure(boardStr);
+
     return score;
   }
 
