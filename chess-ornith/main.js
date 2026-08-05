@@ -344,38 +344,113 @@ export class ChessGame {
     }
   }
 
-  showWinModal(winner) {
-    const el = document.createElement('div');
-    el.className = 'modal-overlay';
-    el.innerHTML = `
+  showEndGameSummary(resultType, winnerName, reason) {
+    const master = MASTER_PROFILES[this.activeMaster] || MASTER_PROFILES.sunfish;
+    const moveCount = Math.floor(this.moveHistory.length / 2) + 1;
+    const finalEval = this.engine.evaluatePosition(this.state, 'white');
+    const evalFormatted = finalEval > 0 ? `+${finalEval.toFixed(2)}` : finalEval.toFixed(2);
+
+    let titleText = '';
+    let icon = '🏆';
+    if (resultType === 'win') {
+      titleText = `${winnerName} Wins by Checkmate!`;
+      icon = winnerName === 'White' ? '♔' : '♚';
+    } else {
+      titleText = `Game Drawn (${reason})`;
+      icon = '🤝';
+    }
+
+    // Master Post-Game Tactical Commentary
+    let analysisText = '';
+    if (this.activeMaster === 'carlsen') {
+      analysisText = `Carlsen's Lens: The position was defined by central space control and flexible pawn structures over ${moveCount} moves. Final evaluation stood at ${evalFormatted} pawns.`;
+    } else if (this.activeMaster === 'kasparov') {
+      analysisText = `Kasparov's Lens: High initiative game with energetic piece development and space claims. Final evaluation reached ${evalFormatted} pawns over ${moveCount} moves.`;
+    } else if (this.activeMaster === 'petrosian') {
+      analysisText = `Petrosian's Lens: Prophylactic defensive play neutralized counter-threats. Game concluded in ${moveCount} moves with a score of ${evalFormatted} pawns.`;
+    } else if (this.activeMaster === 'tal') {
+      analysisText = `Tal's Lens: Sharp tactical complications and line openings created critical turning points during the ${moveCount}-move battle.`;
+    } else if (this.activeMaster === 'morphy') {
+      analysisText = `Morphy's Lens: Rapid piece development into central squares set the strategic pace across ${moveCount} moves.`;
+    } else {
+      analysisText = `Sunfish Engine Analysis: 120-mailbox Piece-Square Table calculation completed ${moveCount} moves with final evaluation of ${evalFormatted} pawns.`;
+    }
+
+    const modalEl = document.createElement('div');
+    modalEl.className = 'modal-overlay';
+    modalEl.innerHTML = `
       <div class="modal">
-        <h2>🎉 ${winner} Wins by Checkmate!</h2>
-        <button class="btn btn-primary" id="modal-restart-btn">Play Again</button>
+        <div class="modal-header">
+          <div class="modal-header-icon">${icon}</div>
+          <div class="modal-header-text">
+            <h2>${titleText}</h2>
+            <p>Game Summary & Post-Game Analysis</p>
+          </div>
+        </div>
+
+        <div class="summary-stats-grid">
+          <div class="summary-stat-card">
+            <span class="summary-stat-label">Total Moves</span>
+            <span class="summary-stat-val">${moveCount} Moves</span>
+          </div>
+          <div class="summary-stat-card">
+            <span class="summary-stat-label">Final Evaluation</span>
+            <span class="summary-stat-val">${evalFormatted} pawns</span>
+          </div>
+          <div class="summary-stat-card">
+            <span class="summary-stat-label">Master Opponent</span>
+            <span class="summary-stat-val">${master.avatar} ${master.name}</span>
+          </div>
+          <div class="summary-stat-card">
+            <span class="summary-stat-label">Difficulty</span>
+            <span class="summary-stat-val">${this.difficulty.toUpperCase()}</span>
+          </div>
+        </div>
+
+        <div class="summary-analysis-box">
+          <div class="summary-analysis-title">
+            <span>🧠 ${master.name} Post-Game Analysis</span>
+          </div>
+          <div class="summary-analysis-body">${analysisText}</div>
+        </div>
+
+        <div class="modal-actions">
+          <button class="btn btn-secondary btn-sm" id="modal-review-btn">📜 Review Moves</button>
+          <button class="btn btn-secondary btn-sm" id="modal-pgn-btn">📋 Copy PGN</button>
+          <button class="btn btn-primary btn-sm" id="modal-restart-btn">✨ Rematch</button>
+        </div>
       </div>
     `;
-    el.style.display = 'flex';
-    document.body.appendChild(el);
-    document.getElementById('modal-restart-btn').addEventListener('click', () => {
-      el.remove();
+
+    document.body.appendChild(modalEl);
+
+    // Event Listeners
+    document.getElementById('modal-restart-btn')?.addEventListener('click', () => {
+      modalEl.remove();
       this.resetGame();
+    });
+
+    document.getElementById('modal-review-btn')?.addEventListener('click', () => {
+      modalEl.remove();
+      document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+      document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+      document.querySelector('[data-tab="history"]')?.classList.add('active');
+      document.getElementById('tab-history')?.classList.add('active');
+    });
+
+    document.getElementById('modal-pgn-btn')?.addEventListener('click', () => {
+      const pgn = this.moveHistory.map((m, i) => i % 2 === 0 ? `${Math.floor(i/2) + 1}. ${m.move}` : m.move).join(' ');
+      navigator.clipboard.writeText(pgn);
+      alert('PGN copied to clipboard!');
     });
   }
 
+  showWinModal(winner) {
+    this.showEndGameSummary('win', winner, null);
+  }
+
   showDrawModal(reason) {
-    const el = document.createElement('div');
-    el.className = 'modal-overlay';
-    el.innerHTML = `
-      <div class="modal">
-        <h2>🤝 Game Drawn (${reason})</h2>
-        <button class="btn btn-primary" id="modal-restart-btn">Play Again</button>
-      </div>
-    `;
-    el.style.display = 'flex';
-    document.body.appendChild(el);
-    document.getElementById('modal-restart-btn').addEventListener('click', () => {
-      el.remove();
-      this.resetGame();
-    });
+    this.showEndGameSummary('draw', null, reason);
   }
 
   updateUI() {
